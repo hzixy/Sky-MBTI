@@ -8,21 +8,21 @@ st.set_page_config(
 )
 
 # --- 2. SETUP SESSION STATE ---
-# Ini berguna agar aplikasi 'ingat' tombol mana yang ditekan
 if 'selected_mbti' not in st.session_state:
     st.session_state.selected_mbti = None
 
 def set_mbti(mbti_key):
     st.session_state.selected_mbti = mbti_key
 
-# --- 3. CUSTOM CSS (BACKGROUND & STYLE) ---
-# Saya mengganti URL background dengan sumber yang lebih stabil (WallpaperCave/Official)
+# --- 3. CUSTOM CSS (BACKGROUND REDUP & LAYOUT RAPI) ---
 st.markdown("""
     <style>
-    /* --- Background Image --- */
+    /* --- Background Image (Diredupkan) --- */
     [data-testid="stAppViewContainer"] {
-        /* Gambar Background: Isle of Dawn / Sky Aesthetic */
-        background-image: url("http://tmpfiles.org/dl/19143103/sky.jpg");
+        /* Teknik Linear Gradient di bawah ini berfungsi sebagai "Filter Gelap" (Overlay).
+           rgba(0, 0, 0, 0.5) artinya memberi lapisan hitam transparan 50%.
+        */
+        background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("http://tmpfiles.org/dl/19143103/sky.jpg");
         background-size: cover;
         background-position: center center;
         background-repeat: no-repeat;
@@ -33,14 +33,16 @@ st.markdown("""
         background-color: rgba(0,0,0,0);
     }
 
-    /* --- Container Utama (Semi-Transparan) --- */
+    /* --- Container Utama (Agar Tulisan Tidak Nabrak) --- */
     .main .block-container {
-        background-color: rgba(255, 255, 255, 0.92); /* Putih 92% agar teks jelas */
-        padding: 30px;
+        /* Opacity dinaikkan jadi 0.95 agar background belakang tidak terlalu tembus mengganggu teks */
+        background-color: rgba(255, 255, 255, 0.95); 
+        padding: 40px; /* Menambah jarak pinggir agar tulisan lebih ke tengah */
         border-radius: 20px;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-        backdrop-filter: blur(4px);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); /* Bayangan lebih kuat agar kontras */
+        backdrop-filter: blur(5px);
         margin-top: 20px;
+        max-width: 800px; /* Membatasi lebar agar rapi di layar besar */
     }
 
     /* --- Style AI Overview Box --- */
@@ -72,12 +74,14 @@ st.markdown("""
         background-color: white;
         color: #4b5563;
         transition: all 0.3s ease;
+        font-weight: 500;
     }
     div.stButton > button:hover {
         border-color: #6366f1;
         color: #6366f1;
         background-color: #eef2ff;
         transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     div.stButton > button:focus {
         background-color: #6366f1;
@@ -86,7 +90,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 4. DATABASE DATA (LENGKAP) ---
+# --- 4. DATABASE DATA ---
 sky_data = {
     "ISTJ": {
         "aka": "The Inventor",
@@ -226,16 +230,14 @@ st.caption("👇 **Atau pilih tipe MBTI secara langsung:**")
 
 # Membuat Grid Tombol (4 baris x 4 kolom)
 mbti_keys = list(sky_data.keys())
-cols = st.columns(4) # Membagi layar jadi 4 kolom
+cols = st.columns(4) 
 for i, key in enumerate(mbti_keys):
-    with cols[i % 4]: # Logika untuk menempatkan tombol di kolom yang benar
-        # Tampilkan tombol dengan Nama Tipe + Julukan Singkat
-        aka_short = sky_data[key]['aka'].split(" ")[1] # Ambil kata kedua (The [Inventor])
+    with cols[i % 4]: 
+        aka_short = sky_data[key]['aka'].split(" ")[1] 
         if st.button(f"**{key}**\n{aka_short}", use_container_width=True):
-            set_mbti(key) # Update session state saat diklik
+            set_mbti(key) 
 
 # --- 7. LOGIKA TAMPILAN HASIL ---
-# Cek apakah ada MBTI yang dipilih di session state
 final_query = st.session_state.selected_mbti
 
 if final_query:
@@ -274,12 +276,10 @@ if final_query:
         with c2:
             st.markdown(f"<div class='section-header'>📍 Where to Find Them</div>", unsafe_allow_html=True)
             for item in d['location']:
-                st.info(item.replace("**", "LOCATION: ", 1).replace("LOCATION: ", "")) # Sedikit trik formatting
+                st.info(item.replace("**", "LOCATION: ", 1).replace("LOCATION: ", "")) 
 
     else:
         st.warning(f"⚠️ Maaf, data untuk '{final_query}' tidak ditemukan.")
 
 else:
-    # Pesan default jika belum ada yang dipilih
     st.info("👈 Silakan pilih salah satu tombol MBTI di atas untuk melihat analisisnya.")
-
