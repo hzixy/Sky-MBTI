@@ -22,7 +22,7 @@ st.markdown("""
     /* --- 1. SETTING BACKGROUND UTAMA (GLOBAL) --- */
     [data-testid="stAppViewContainer"] {
         /* Ganti link ini dengan link gambar background kamu yang permanen */
-        background-image: url("https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1000&auto=format&fit=crop");
+        background-image: url("http://tmpfiles.org/dl/19144039/skybg.png");
         background-size: cover;
         background-position: center center;
         background-repeat: no-repeat;
@@ -310,6 +310,7 @@ if final_query:
 else:
     # Pesan default jika belum ada yang dipilih
     st.info("👈 Silakan pilih salah satu tombol MBTI di atas untuk melihat analisisnya.")
+
 
 
 
