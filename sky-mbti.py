@@ -1,166 +1,407 @@
 import streamlit as st
-from PIL import Image
-import io
-import os
-import tempfile
-import requests
 
-# --- Konfigurasi Halaman ---
-st.set_page_config(page_title="MediaToolbox Pro", layout="centered", page_icon="🛠️")
+# --- KONFIGURASI HALAMAN ---
+st.set_page_config(
+    page_title="SkyPersonality Codex",
+    page_icon="🕯️",
+    layout="centered"
+)
 
-st.title("🛠️ MediaToolbox Pro")
-st.markdown("Aplikasi All-in-One untuk Konversi, Kompresi, dan Upload Media.")
+# --- CUSTOM CSS UNTUK TAMPILAN MIRIP AI OVERVIEW ---
+st.markdown("""
+    <style>
+    .ai-overview-box {
+        background-color: #f0f2f6;
+        border-radius: 10px;
+        padding: 20px;
+        border-left: 5px solid #6366f1;
+        margin-bottom: 20px;
+        color: #31333F;
+    }
+    .highlight {
+        background-color: #e0e7ff;
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-weight: 600;
+        color: #3730a3;
+    }
+    .section-header {
+        color: #1f2937;
+        font-weight: 700;
+        margin-top: 15px;
+        margin-bottom: 5px;
+        font-size: 1.1em;
+    }
+    .stTextInput > div > div > input {
+        border-radius: 20px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# --- Sidebar Navigasi ---
-menu = ["Konverter Gambar", "Kompresor Media", "Buat Link (Upload)"]
-choice = st.sidebar.selectbox("Pilih Fitur", menu)
+# --- DATABASE MBTI SKY ---
+sky_data = {
+    "ISTJ": {
+        "aka": "The Inventor",
+        "summary": "Pemain **ISTJ (The Inventor)** mewujudkan pola pikir **'Technical Analyst'**. Mereka berfokus pada pemahaman mendalam tentang mekanik game, eksperimen dengan *bug/glitch* secara sistematis, dan efisiensi. Pikiran mereka sibuk menghitung detik atau sudut terbang terbaik.",
+        "playstyle": [
+            "**Mechanic Mastery:** Membongkar cara kerja game, menghitung *wax* per area, menguasai *rocket jump*.",
+            "**Routine & Reliability:** Rute *farming* spesifik. Selalu tepat waktu jika janjian.",
+            "**Fact-Based Helper:** Membantu dengan solusi teknis (glitch pintu, lokasi WL) daripada basa-basi.",
+            "**Inventory Management:** Teliti menabung *Candles* dan *Hearts* untuk Traveling Spirit."
+        ],
+        "archetypes": [
+            "**The Glitch Hunter:** Mencari celah OOB untuk melihat struktur game.",
+            "**The Solo Grinder:** CR 20 lilin tanpa bicara sepatah kata pun.",
+            "**The Wiki Walker:** Menghafal harga item dan lokasi Spirit."
+        ],
+        "location": [
+            "**Glitch Spots:** Menabrak dinding di **Vault** atau **Isle** mencari OOB.",
+            "**The Office:** Menganalisis konten di area rahasia TGC."
+        ]
+    },
+    "INTJ": {
+        "aka": "The Mastermind",
+        "summary": "Pemain **INTJ (The Mastermind)** adalah **'Strategic Visionary'**. Fokus pada optimalisasi rute, kemandirian mutlak, dan observasi. *Sky* adalah sistem yang harus dipecahkan. Mereka efisien namun sangat mengapresiasi *lore*.",
+        "playstyle": [
+            "**Strategic Exploration:** Peta mental sempurna, rute terpendek tanpa buang energi.",
+            "**System Analysis:** *Candle Run* adalah teka-teki efisiensi waktu.",
+            "**Introverted Independence:** Nyaman solo, menolak teman jika memperlambat.",
+            "**Lore Theorist:** Merenungkan sejarah Elders dan teori peradaban Sky."
+        ],
+        "archetypes": [
+            "**The Efficiency Expert:** Full CR 3 realm < 45 menit.",
+            "**The Silent Uber:** Memimpin di *Trial of Fire* dengan cepat tanpa bicara.",
+            "**The Observer:** Mengamati pemain lain dari tempat tinggi."
+        ],
+        "location": [
+            "**Efficient Routes:** Jalur balap **Valley of Triumph**.",
+            "**Scheduled Events:** Tiba tepat waktu di **Geyser** (:05) atau **Grandma** (:35)."
+        ]
+    },
+    "ENTJ": {
+        "aka": "The Marshall",
+        "summary": "Pemain **ENTJ (The Marshall)** adalah **'Leader of the Pack'**. Fokus pada pengorganisasian grup, keberanian menghadapi Krill, dan struktur tegas. Mereka memastikan *moth* mendapat panduan jelas.",
+        "playstyle": [
+            "**Commanding Leadership:** Uber alami, menggunakan emote *Point* untuk instruksi.",
+            "**Objective Driven:** Main dengan tujuan (Elder Hair, konstelasi penuh).",
+            "**Fearless Approach:** Tidak takut Krill, melihatnya sebagai tantangan.",
+            "**Community Builder:** Sering jadi admin grup atau inisiator event."
+        ],
+        "archetypes": [
+            "**The Veteran Captain:** Menarik 3-7 pemain menembus badai.",
+            "**The Krill Bait:** Mengalihkan Krill agar teman aman.",
+            "**The Strict Mentor:** Mengajar *moth* dengan tegas."
+        ],
+        "location": [
+            "**Golden Wasteland:** Memimpin di **Graveyard** atau **Battlefield**.",
+            "**Eden Entrance:** Melakukan *Deep Call* mengumpulkan pasukan."
+        ]
+    },
+    "INTP": {
+        "aka": "The Architect",
+        "summary": "Pemain **INTP (The Architect)** adalah **'Curious Explorer'**. Didorong rasa ingin tahu intelektual. Lebih tertarik pada *kenapa* dunia Sky seperti ini daripada sekadar cari lilin. Gudang rahasia game.",
+        "playstyle": [
+            "**Unconventional Methods:** Mencoba hal aneh/eksperimen fisika game.",
+            "**Deep Lore Focus:** Membaca mural, memahami narasi tersirat.",
+            "**Detached Observation:** Suka OOB sunyi daripada tempat sosial.",
+            "**Sporadic Activity:** Pola main tidak teratur (burst energy)."
+        ],
+        "archetypes": [
+            "**The OOB Explorer:** Lebih sering di luar peta (*Rainbow Bridge*) daripada di dalam.",
+            "**The Wikipedia:** Tahu segala detail sejarah Season.",
+            "**The Chill Soloist:** Duduk diam di gua sepi."
+        ],
+        "location": [
+            "**Lore Locations:** **Library (Vault)** membaca arsip.",
+            "**Cave of Prophecy:** Mengamati mural elemen di **Isle**."
+        ]
+    },
+    "INFP": {
+        "aka": "The Healer",
+        "summary": "Pemain **INFP (The Healer)** adalah **'Soul of Sky'**. Fokus pada estetika, koneksi emosional, dan ekspresi. Sky adalah pelarian puitis. Sangat peduli mood teman.",
+        "playstyle": [
+            "**Aesthetic Appreciation:** Berhenti demi pemandangan/cahaya bagus.",
+            "**Emotional Support:** Siap dengan emote *Hug*, *Bow*, *Cry*.",
+            "**Imaginative Roleplay:** Ganti outfit sesuai tema area.",
+            "**Non-Competitive:** Terbang lambat menikmati musik."
+        ],
+        "archetypes": [
+            "**The Photographer:** Galeri penuh screenshot pemandangan.",
+            "**The Musician:** Main musik di tempat sepi untuk diri sendiri.",
+            "**The Emotional Moth:** Veteran yang tetap polos sifatnya."
+        ],
+        "location": [
+            "**Atmospheric Spots:** Bangku **Hidden Forest** (hujan) atau **Starlight Desert**.",
+            "**Social Spaces:** Sendirian di **Treehouse**."
+        ]
+    },
+    "ENFJ": {
+        "aka": "The Teacher",
+        "summary": "Pemain **ENFJ (The Teacher)** adalah **'Guardian Angel'**. Misi utama: keharmonisan sosial dan membantu yang kesulitan. Rela habiskan waktu demi bantu orang asing.",
+        "playstyle": [
+            "**Moth Adopter:** Radar pendeteksi pemain baru yang bingung.",
+            "**Harmony Keeper:** Penengah konflik, pelindung dari troll.",
+            "**Group Coordinator:** 'No one left behind' mentalitas.",
+            "**Verbal/Social:** Aktif di Chat Bench, pendengar baik."
+        ],
+        "archetypes": [
+            "**The Guide:** Selalu bawa *Table* untuk bantu orang.",
+            "**The Party Host:** Mengumpulkan orang menari di lobi.",
+            "**The Protector:** Pasang badan depan Krill demi Moth."
+        ],
+        "location": [
+            "**Moth Spawn Points:** **Isle of Dawn** atau Lobi **Prairie**.",
+            "**8-Player Door:** Menunggu sabar di puzzle 8 orang."
+        ]
+    },
+    "ENFP": {
+        "aka": "The Champion",
+        "summary": "Pemain **ENFP (The Champion)** membawa energi **'Chaotic Good'**. Penuh semangat, spontan, mudah teralihkan. Pusat kegembiraan server yang suka spam honk.",
+        "playstyle": [
+            "**Spontaneous Adventure:** Rute berantakan karena distraksi seru.",
+            "**Social Butterfly:** Berteman dengan siapa saja, honk sapaan.",
+            "**Creative Expression:** Kombinasi kosmetik unik/aneh.",
+            "**Emote Spammer:** Komunikasi lewat emote cepat & spin."
+        ],
+        "archetypes": [
+            "**The Distracted Uber:** Berhenti tiba-tiba karena lihat kupu-kupu.",
+            "**The Honk Master:** *Deep call* terus-menerus cari perhatian.",
+            "**The Friend Collector:** Teman dari seluruh dunia."
+        ],
+        "location": [
+            "**Social Hubs:** Kolam Lobi **Prairie** atau **Sanctuary**.",
+            "**Event Areas:** Tengah keramaian event Days of Color/Bloom."
+        ]
+    },
+    "INFJ": {
+        "aka": "The Counselor",
+        "summary": "Pemain **INFJ (The Counselor)** adalah **'Silent Guardian'**. Tenang, misterius, protektif pada *inner circle*. Bermain untuk koneksi dalam, bukan kuantitas.",
+        "playstyle": [
+            "**Deep Connection:** Lebih suka ngobrol deep berdua di bench.",
+            "**Intuitive Support:** Tahu kapan teman butuh recharge tanpa diminta.",
+            "**Private:** Jarang muncul di chat publik yang ramai.",
+            "**Purposeful:** Main untuk relaksasi mental."
+        ],
+        "archetypes": [
+            "**The Silent Guardian:** Jarang bicara tapi selalu ada.",
+            "**The Confidant:** Tempat curhat aman di Sky.",
+            "**The Mystic:** Outfit bertema gelap/misterius (Anubis mask)."
+        ],
+        "location": [
+            "**Quiet Heights:** Puncak **Hermit Valley** atau **Wind Paths**.",
+            "**Chat Benches:** Sudut sepi untuk bicara privat."
+        ]
+    },
+    "ESFJ": {
+        "aka": "The Provider",
+        "summary": "Pemain **ESFJ (The Provider)** adalah **'The Heart Trader'**. Memastikan logistik grup aman. Sangat taat etika Sky (selalu bow, light, kirim heart).",
+        "playstyle": [
+            "**Logistics:** Memastikan semua dapat lilin & heart.",
+            "**Sky Etiquette:** Sangat sopan, bow berkali-kali.",
+            "**Community Glue:** Mengingat ulang tahun teman Sky.",
+            "**Routine Giver:** Rajin kirim light fragment."
+        ],
+        "archetypes": [
+            "**The Heart Trader:** Kirim heart tiap hari tanpa absen.",
+            "**The Mom Friend:** 'Sudah ambil WL di sana belum?'",
+            "**The Banquet Host:** Menyiapkan meja makan di Grandma."
+        ],
+        "location": [
+            "**Grandma's Feast:** Menaruh *Torch*/*Brazier* untuk orang lain.",
+            "**Home:** Berdiri di konstelasi kirim light."
+        ]
+    },
+    "ISFJ": {
+        "aka": "The Protector",
+        "summary": "Pemain **ISFJ (The Protector)** adalah **'Loyal Support'**. Tipe support sejati. Membawa properti berguna, tidak menonjol tapi krusial bagi tim.",
+        "playstyle": [
+            "**Support Role:** Membawa payung di Forest, Torch di Wasteland.",
+            "**Loyal Follower:** Setia mengikuti Uber kemanapun.",
+            "**Detail Oriented:** Mengingat preferensi teman.",
+            "**Safety First:** Menghindari rute berbahaya."
+        ],
+        "archetypes": [
+            "**The Walking Battery:** Tugas utama: recharge Uber.",
+            "**The Umbrella Holder:** Melindungi teman dari hujan.",
+            "**The Silent Partner:** Teman CR paling nyaman."
+        ],
+        "location": [
+            "**Trailing Leaders:** Mode follow di belakang teman.",
+            "**Dark Water Areas:** **Wasteland**, menerangi jalan."
+        ]
+    },
+    "ESTJ": {
+        "aka": "The Supervisor",
+        "summary": "Pemain **ESTJ (The Supervisor)** adalah **'Task Master'**. CR adalah pekerjaan. Efisien, tegas, tidak suka basa-basi atau AFK tanpa izin.",
+        "playstyle": [
+            "**Efficiency:** 'Ayo cepat, geyser 2 menit lagi'.",
+            "**Structure:** Patuh jadwal event (Geyser-Grandma-Turtle).",
+            "**Direct:** Menegur jika ada yang main-main saat CR.",
+            "**Goal Oriented:** Mengejar 20 lilin/hari wajib."
+        ],
+        "archetypes": [
+            "**The Schedule Master:** Hafal mati jadwal event.",
+            "**The No-Nonsense Uber:** 'Duduk atau ditinggal'.",
+            "**The Grinder:** Fokus murni pada currency."
+        ],
+        "location": [
+            "**Clock-Watching:** Lari antar portal di **Home**.",
+            "**Trials:** Menyelesaikan **Trial Earth/Air** dengan kaku."
+        ]
+    },
+    "ISTP": {
+        "aka": "The Operator",
+        "summary": "Pemain **ISTP (The Operator)** adalah **'Skill Master'**. Praktis, berani, suka tantangan fisik. Terbang solo di Eden tanpa terluka adalah hobi.",
+        "playstyle": [
+            "**Technical Skill:** Terbang manual sempurna.",
+            "**Solo Challenges:** Eden solo, Trials shortcut.",
+            "**Adaptive:** Bisa selamat di situasi apapun.",
+            "**Action Oriented:** Lebih suka bergerak daripada chat."
+        ],
+        "archetypes": [
+            "**The Solo Ace:** Terbang sendiri lebih cepat daripada di-uber.",
+            "**The Trial Speedrunner:** Shortcut trial api/air.",
+            "**The Parkour Master:** Lompat di aset map sulit."
+        ],
+        "location": [
+            "**Skill Challenges:** Shortcut **Trial of Fire**.",
+            "**Flying Race:** Akrobatik di **Citadel (Valley)**."
+        ]
+    },
+    "ESFP": {
+        "aka": "The Performer",
+        "summary": "Pemain **ESFP (The Performer)** menjadikan langit sebagai **'Panggung'**. Koleksi instrumen & kosmetik mencolok. Suka jadi pusat perhatian.",
+        "playstyle": [
+            "**Showmanship:** Main musik lagu populer di tempat ramai.",
+            "**Fashion:** Pakai Ultimate Gift terbaru/termahal.",
+            "**Entertainer:** Emote lucu, kembang api.",
+            "**Social Energy:** Suka keramaian lobi."
+        ],
+        "archetypes": [
+            "**The Musician:** Konser tunggal di Harmony Hall.",
+            "**The Fashionista:** Outfit paling bersinar.",
+            "**The Drama:** Reaksi emote yang heboh."
+        ],
+        "location": [
+            "**Harmony Hall:** Panggung utama toko musik.",
+            "**Crowded Lobbies:** Pakai celana Rhythm/Sayap Aurora."
+        ]
+    },
+    "ISFP": {
+        "aka": "The Composer",
+        "summary": "Pemain **ISFP (The Composer)** adalah **'Artistic Wanderer'**. Bermain mengandalkan *mood*, visual, dan audio. Mengekspresikan diri lewat outfit unik.",
+        "playstyle": [
+            "**Visual Flair:** Mix-and-match outfit estetik.",
+            "**Sensory:** Menikmati suara langkah/seluncur es.",
+            "**Solo Artist:** Main musik bukan untuk pamer, tapi rasa.",
+            "**Fluid:** Bergerak mengikuti arus/mood."
+        ],
+        "archetypes": [
+            "**The Photographer:** Screenshot artistik OOB.",
+            "**The Silent Musician:** Lagu sedih di hujan.",
+            "**The Vibes Player:** Login cuma buat jalan-jalan."
+        ],
+        "location": [
+            "**Scenic OOB:** **Rainbow Bridge** atau atas awan.",
+            "**Village of Dreams:** Seluncur santai."
+        ]
+    },
+    "ESTP": {
+        "aka": "The Promoter",
+        "summary": "Pemain **ESTP (The Promoter)** mencari **'Adrenaline'**. Suka aksi, *trolling* ringan, balapan, dan tantangan berbahaya.",
+        "playstyle": [
+            "**Thrill Seeker:** Sengaja cari bahaya.",
+            "**Playful Troll:** Kembang api di muka teman, unfriend prank.",
+            "**Competitve:** Ajak balapan di Valley.",
+            "**Fast Paced:** Gak betah diam lama."
+        ],
+        "archetypes": [
+            "**The Krill Dodger:** Prank naga Wasteland.",
+            "**The Racer:** Selalu ingin duluan sampai.",
+            "**The Prankster:** Lucu tapi kadang nyebelin."
+        ],
+        "location": [
+            "**Danger Zones:** Main petak umpet sama Krill **Wasteland**.",
+            "**Racing:** Lereng salju **Valley**."
+        ]
+    },
+    "ENTP": {
+        "aka": "The Debater", # Menambahkan ENTP agar lengkap 16
+        "summary": "Pemain **ENTP (The Debater)** adalah **'Chaos Theorist'**. Inovatif, suka mengetes batas game, dan debat tentang lore atau mekanik di chat.",
+        "playstyle": [
+            "**Boundary Pushing:** 'Bisa gak ya kita ke sana tanpa sayap?'.",
+            "**Intellectual Chat:** Debat teori di bench berjam-jam.",
+            "**Unpredictable:** Kadang Uber, kadang kabur.",
+            "**Experimenter:** Mencoba glitch baru."
+        ],
+        "archetypes": [
+            "**The Hacker:** (Bukan cheat) Tapi tahu segala trik aneh.",
+            "**The Troll:** Menjatuhkan teman ke air (bercanda).",
+            "**The Innovator:** Menemukan cara farming baru."
+        ],
+        "location": [
+            "**Glitch Areas:** Mencoba menembus tembok yang mustahil.",
+            "**Wasteland Social:** Ngobrol debat di lobi."
+        ]
+    }
+}
 
-# --- FUNGSI BANTUAN ---
+# --- HEADER APLIKASI ---
+st.title("🌌 Sky: Children of the Light")
+st.subheader("MBTI Personality Codex")
+st.write("Masukkan tipe MBTI atau julukan (contoh: *INTJ*, *The Healer*) untuk melihat analisis karakter mereka di dunia Sky.")
 
-def get_size_format(b, factor=1024, suffix="B"):
-    """Mengubah byte menjadi format yang mudah dibaca"""
-    for unit in ["", "K", "M", "G", "T", "P", "E", "Z"]:
-        if b < factor:
-            return f"{b:.2f}{unit}{suffix}"
-        b /= factor
-    return f"{b:.2f}Y{suffix}"
+# --- SEARCH BAR ---
+query = st.text_input("", placeholder="🔍 Search MBTI (e.g., ISTJ, The Protector)...").strip()
 
-# --- FITUR 1: KONVERTER GAMBAR ---
-if choice == "Konverter Gambar":
-    st.header("🖼️ Konverter Format Gambar")
-    st.info("Mendukung JPG, PNG, WEBP, GIF (Statis)")
-
-    uploaded_file = st.file_uploader("Upload Gambar", type=["jpg", "jpeg", "png", "webp"])
-
-    if uploaded_file is not None:
-        image = Image.open(uploaded_file)
-        st.image(image, caption="Gambar Asli", use_column_width=True)
-        
-        # Pilihan Format Output
-        format_type = st.selectbox("Pilih Format Tujuan", ["PNG", "JPEG", "WEBP", "GIF"])
-        
-        if st.button("Konversi Sekarang"):
-            try:
-                buf = io.BytesIO()
-                # Konversi mode warna jika perlu (JPEG tidak mendukung transparansi/RGBA)
-                if format_type == "JPEG" and image.mode in ("RGBA", "P"):
-                    image = image.convert("RGB")
-                
-                image.save(buf, format=format_type)
-                byte_im = buf.getvalue()
-
-                st.success(f"Berhasil dikonversi ke {format_type}!")
-                
-                st.download_button(
-                    label="⬇️ Download Gambar",
-                    data=byte_im,
-                    file_name=f"converted_image.{format_type.lower()}",
-                    mime=f"image/{format_type.lower()}"
-                )
-            except Exception as e:
-                st.error(f"Terjadi kesalahan: {e}")
-
-# --- FITUR 2: KOMPRESOR MEDIA ---
-elif choice == "Kompresor Media":
-    st.header("🗜️ Kompresor Gambar & Video")
+# --- LOGIKA PENCARIAN & TAMPILAN ---
+if query:
+    found_key = None
     
-    media_type = st.radio("Tipe Media", ["Gambar", "Video/GIF"])
-
-    if media_type == "Gambar":
-        uploaded_file = st.file_uploader("Upload Gambar untuk Dikompres", type=["jpg", "png", "jpeg"])
-        if uploaded_file:
-            image = Image.open(uploaded_file)
-            original_size = len(uploaded_file.getvalue())
-            st.text(f"Ukuran Asli: {get_size_format(original_size)}")
-
-            quality_val = st.slider("Kualitas Kompresi (1-100)", 10, 95, 60)
-            
-            if st.button("Kompres Gambar"):
-                buf = io.BytesIO()
-                # Pastikan mode RGB untuk JPEG
-                if image.mode in ("RGBA", "P"):
-                    image = image.convert("RGB")
-                
-                image.save(buf, format="JPEG", quality=quality_val, optimize=True)
-                byte_im = buf.getvalue()
-                
-                compressed_size = len(byte_im)
-                st.write(f"Ukuran Setelah Kompresi: **{get_size_format(compressed_size)}**")
-                st.write(f"Penghematan: {((original_size-compressed_size)/original_size)*100:.1f}%")
-                
-                st.download_button(
-                    label="⬇️ Download Hasil Kompresi",
-                    data=byte_im,
-                    file_name="compressed_image.jpg",
-                    mime="image/jpeg"
-                )
-
-    elif media_type == "Video/GIF":
-        st.warning("Pemrosesan video memerlukan waktu dan resource CPU.")
-        uploaded_video = st.file_uploader("Upload Video/GIF", type=["mp4", "mov", "gif"])
+    # Mencari match di key (ISTJ) atau value aka (The Inventor)
+    for key, data in sky_data.items():
+        if query.upper() == key or query.lower() in data['aka'].lower():
+            found_key = key
+            break
+    
+    if found_key:
+        d = sky_data[found_key]
         
-        if uploaded_video:
-            tfile = tempfile.NamedTemporaryFile(delete=False) 
-            tfile.write(uploaded_video.read())
-            
-            clip = VideoFileClip(tfile.name)
-            st.text(f"Durasi: {clip.duration} detik")
-            
-            resize_factor = st.slider("Ubah Ukuran (Resolusi)", 0.1, 1.0, 0.5)
-            
-            if st.button("Kompres Video"):
-                with st.spinner('Sedang memproses video... Harap tunggu...'):
-                    output_path = tempfile.mktemp(suffix=".mp4")
-                    # Resize dan tulis file baru dengan bitrate rendah
-                    new_clip = clip.resize(resize_factor)
-                    new_clip.write_videofile(output_path, codec="libx264", audio_codec="aac", bitrate="500k")
-                    
-                    with open(output_path, "rb") as file:
-                        btn = st.download_button(
-                            label="⬇️ Download Video Kompres",
-                            data=file,
-                            file_name="compressed_video.mp4",
-                            mime="video/mp4"
-                        )
-                    # Cleanup
-                    os.remove(output_path)
-            
-            # Cleanup input temp file
-            # os.remove(tfile.name) # Note: Removing temp file in usage can cause errors depending on OS lock
+        # TAMPILAN CARD AI OVERVIEW
+        st.markdown(f"""
+        <div class="ai-overview-box">
+            <h3>✨ {found_key} - {d['aka']}</h3>
+            <p>{d['summary']}</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # DETAIL SECTIONS
+        c1, c2 = st.columns([1.5, 1])
+        
+        with c1:
+            st.markdown(f"<div class='section-header'>How {found_key} Plays Sky</div>", unsafe_allow_html=True)
+            for item in d['playstyle']:
+                st.markdown(f"- {item}")
+                
+        with c2:
+            st.markdown(f"<div class='section-header'>Common Archetypes</div>", unsafe_allow_html=True)
+            for item in d['archetypes']:
+                st.markdown(f"- {item}")
 
-# --- FITUR 3: BUAT LINK (UPLOAD KE CLOUD) ---
-elif choice == "Buat Link (Upload)":
-    st.header("🔗 Ubah File Menjadi Link")
-    st.markdown("""
-    Fitur ini akan mengupload file Anda ke layanan hosting sementara (**file.io**) 
-    dan memberikan link yang bisa dibagikan. Link akan kadaluarsa setelah **1 kali download** atau **14 hari**.
-    """)
-    
-    file_to_link = st.file_uploader("Upload File Apa Saja (Gambar/GIF/Video)", type=["jpg", "png", "gif", "mp4", "webp"])
-    
-    if file_to_link:
-        if st.button("Generate Link"):
-            with st.spinner("Mengupload ke server..."):
-                try:
-                    # Menggunakan API file.io (Gratis, tanpa auth untuk tes dasar)
-                    files = {'file': file_to_link.getvalue()}
-                    response = requests.post('https://file.io', files=files)
-                    
-                    if response.status_code == 200:
-                        data = response.json()
-                        if data["success"]:
-                            link = data["link"]
-                            st.success("File berhasil diupload!")
-                            st.text_input("Salin Link Anda:", value=link)
-                            st.warning("⚠️ Catatan: Link ini hanya berlaku untuk 1 kali download (default file.io).")
-                        else:
-                            st.error("Gagal mendapatkan link dari server.")
-                    else:
-                        st.error(f"Error server: {response.status_code}")
-                except Exception as e:
-                    st.error(f"Terjadi kesalahan koneksi: {e}")
+        st.markdown("---")
+        st.markdown(f"<div class='section-header'>📍 Where to Find Them</div>", unsafe_allow_html=True)
+        col_loc1, col_loc2 = st.columns(2)
+        for i, loc in enumerate(d['location']):
+            if i % 2 == 0:
+                with col_loc1: st.info(loc)
+            else:
+                with col_loc2: st.info(loc)
 
-# --- Footer ---
-st.markdown("---")
+    else:
+        st.warning(f"Maaf, tidak menemukan data untuk '{query}'. Coba masukkan tipe MBTI (contoh: INFP) atau Julukan (contoh: The Healer).")
 
-st.caption("Dibuat dengan Python & Streamlit")
+else:
+    # Tampilan awal jika belum mencari
+    st.info("👆 Ketik sesuatu di kolom pencarian di atas untuk memulai AI Overview.")
+    with st.expander("Lihat Daftar Kata Kunci"):
+        st.write(", ".join([f"{k} ({v['aka']})" for k, v in sky_data.items()]))
