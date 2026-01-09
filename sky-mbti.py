@@ -19,88 +19,98 @@ def set_mbti(mbti_key):
 # Saya mengganti URL background dengan sumber yang lebih stabil (WallpaperCave/Official)
 st.markdown("""
     <style>
-    /* --- 1. Background Image (Global) --- */
+    /* --- 1. SETTING BACKGROUND UTAMA (GLOBAL) --- */
     [data-testid="stAppViewContainer"] {
-        background-image: url("http://tmpfiles.org/dl/19144039/skybg.png");
+        /* Ganti link ini dengan link gambar background kamu yang permanen */
+        background-image: url("https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1000&auto=format&fit=crop");
         background-size: cover;
         background-position: center center;
         background-repeat: no-repeat;
-        background-attachment: fixed;
+        background-attachment: fixed; /* Background diam saat discroll (Desktop) */
     }
 
+    /* Hilangkan warna header bawaan */
     [data-testid="stHeader"] {
         background-color: rgba(0,0,0,0);
     }
 
-    /* --- 2. KONFIGURASI CONTAINER (BOX PUTIH) --- */
-    /* Ini settingan Default (untuk Laptop/PC) */
+    /* --- 2. SETTING KOTAK KONTEN (DEFAULT / DESKTOP) --- */
     div.block-container {
-        background-color: rgba(255, 255, 255, 0.85);
+        background-color: rgba(255, 255, 255, 0.85); /* Putih Transparan */
         border-radius: 20px;
-        padding: 3rem 3rem; /* Atas-Bawah 3rem, Kiri-Kanan 3rem */
+        padding: 3rem;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         backdrop-filter: blur(5px);
-        max-width: 900px; 
+        max-width: 900px;
         margin-top: 2rem;
     }
 
-    /* --- 3. KHUSUS LAYAR HP (RESPONSIVE) --- */
-    /* Kode di bawah ini hanya jalan kalau layar < 768px (HP/Tablet kecil) */
+    /* --- 3. SETTING KHUSUS HP (MOBILE RESPONSIVE) --- */
+    /* Bagian ini yang memperbaiki masalah "Ketutupan" */
     @media only screen and (max-width: 768px) {
+        
+        /* A. Perbaikan Background di HP */
+        [data-testid="stAppViewContainer"] {
+            background-attachment: scroll; /* Ubah jadi scroll agar gambar tidak nge-zoom parah di HP */
+            background-position: center top;
+        }
+
+        /* B. Perbaikan Kotak Konten di HP */
         div.block-container {
-            padding: 1.5rem 1rem; /* Padding dikecilkan biar muat banyak */
-            margin-top: 0rem;     /* Hilangkan jarak atas berlebih */
-            border-radius: 15px;  /* Radius sudut diperhalus */
-            max-width: 100%;      /* Full width di HP */
+            /* Margin: Memberi jarak luar Kiri-Kanan agar background terlihat */
+            margin-left: 1rem !important;  
+            margin-right: 1rem !important;
+            
+            /* Padding: Jarak tulisan ke pinggir kotak dikecilkan */
+            padding: 1.5rem 1rem !important; 
+            
+            /* Agar kotak tidak terlalu mepet atas */
+            margin-top: 1rem !important;
+            
+            border-radius: 15px;
+            max-width: 100%;
         }
         
-        /* Judul diperkecil sedikit di HP */
-        h1 {
-            font-size: 1.8rem !important;
-        }
-        h3 {
-            font-size: 1.3rem !important;
-        }
+        /* C. Ukuran Font Judul di HP */
+        h1 { font-size: 1.8rem !important; }
+        h3 { font-size: 1.2rem !important; }
     }
 
-    /* --- 4. Style Tombol Grid --- */
+    /* --- 4. PAKSA WARNA TEKS (Supaya terbaca di Dark Mode) --- */
+    h1, h2, h3, h4, h5, h6, p, span, div, li {
+        color: #31333F !important;
+    }
+    
+    /* --- 5. STYLE TOMBOL --- */
     div.stButton > button {
         width: 100%;
         border-radius: 12px;
         border: 1px solid #e0e7ff;
-        background-color: white;
-        color: #4b5563;
-        transition: all 0.3s ease;
-        min-height: 50px; /* Tinggi minimum biar enak dipencet jempol */
-        font-weight: 500;
+        background-color: white !important;
+        color: #4b5563 !important;
+        min-height: 50px;
     }
-    
     div.stButton > button:hover {
         border-color: #6366f1;
-        color: #6366f1;
-        background-color: #eef2ff;
-        transform: translateY(-2px);
+        color: #6366f1 !important;
+        background-color: #eef2ff !important;
     }
-
-    /* --- 5. Style Elemen Lain --- */
+    
+    /* Style Box AI */
     .ai-overview-box {
         background-color: #f8f9fa;
         border-radius: 15px;
-        padding: 20px;
-        border-left: 6px solid #6366f1;
-        margin-bottom: 25px;
-        color: #31333F;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        padding: 15px;
+        border-left: 5px solid #6366f1;
+        margin-bottom: 20px;
     }
     
     .section-header {
-        color: #4338ca;
+        color: #4338ca !important;
         font-weight: 800;
-        margin-top: 20px;
-        margin-bottom: 10px;
-        font-size: 1.2em;
+        margin-top: 15px;
+        font-size: 1.1em;
         border-bottom: 2px solid #e0e7ff;
-        padding-bottom: 5px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -300,6 +310,7 @@ if final_query:
 else:
     # Pesan default jika belum ada yang dipilih
     st.info("👈 Silakan pilih salah satu tombol MBTI di atas untuk melihat analisisnya.")
+
 
 
 
