@@ -7,9 +7,34 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- CUSTOM CSS UNTUK TAMPILAN MIRIP AI OVERVIEW ---
+# --- CUSTOM CSS BARU (BACKGROUND + AI STYLE) ---
+# Saya menambahkan URL gambar Sky yang realistis dan mengatur agar area konten utama
+# memiliki latar belakang putih transparan agar teks mudah dibaca.
 st.markdown("""
     <style>
+    /* --- Pengaturan Background Image --- */
+    [data-testid="stAppViewContainer"] {
+        background-image: url("https://static.wikia.nocookie.net/sky-children-of-the-light/images/e/e4/Isle_of_Dawn_Walkthrough_-_02.jpg/revision/latest/scale-to-width-down/1920?cb=20190724133146");
+        background-size: cover;
+        background-position: center center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+    }
+
+    [data-testid="stHeader"] {
+        background-color: rgba(0,0,0,0); /* Membuat header transparan */
+    }
+
+    /* Membuat kotak konten utama menjadi semi-transparan agar tulisan terbaca */
+    .main .block-container {
+        background-color: rgba(255, 255, 255, 0.9); /* Latar putih 90% opacity */
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-top: 2rem;
+    }
+
+    /* --- Style AI Overview Box (Lama) --- */
     .ai-overview-box {
         background-color: #f0f2f6;
         border-radius: 10px;
@@ -18,13 +43,6 @@ st.markdown("""
         margin-bottom: 20px;
         color: #31333F;
     }
-    .highlight {
-        background-color: #e0e7ff;
-        padding: 2px 5px;
-        border-radius: 4px;
-        font-weight: 600;
-        color: #3730a3;
-    }
     .section-header {
         color: #1f2937;
         font-weight: 700;
@@ -32,13 +50,21 @@ st.markdown("""
         margin-bottom: 5px;
         font-size: 1.1em;
     }
-    .stTextInput > div > div > input {
+    /* Style untuk tombol cari agar seragam */
+    [data-testid="stFormSubmitButton"] button {
+        width: 100%;
         border-radius: 20px;
+        background-color: #6366f1;
+        color: white;
+        border: none;
+    }
+    [data-testid="stFormSubmitButton"] button:hover {
+        background-color: #4f46e5;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- DATABASE MBTI SKY ---
+# --- DATABASE MBTI SKY (Sama seperti sebelumnya) ---
 sky_data = {
     "ISTJ": {
         "aka": "The Inventor",
@@ -351,11 +377,18 @@ st.title("🌌 Sky: Children of the Light")
 st.subheader("MBTI Personality Codex")
 st.write("Masukkan tipe MBTI atau julukan (contoh: *INTJ*, *The Healer*) untuk melihat analisis karakter mereka di dunia Sky.")
 
-# --- SEARCH BAR ---
-query = st.text_input("", placeholder="🔍 Search MBTI (e.g., ISTJ, The Protector)...").strip()
+# --- SEARCH BAR & BUTTON (FORM) ---
+# Kita menggunakan st.form agar pencarian hanya terjadi saat tombol ditekan.
+with st.form(key='search_form'):
+    col_input, col_btn = st.columns([4, 1])
+    with col_input:
+        query = st.text_input("", placeholder="🔍 Search MBTI (e.g., ISTJ, The Protector)...", label_visibility="collapsed").strip()
+    with col_btn:
+        submit_button = st.form_submit_button(label='Cari 🔎')
 
 # --- LOGIKA PENCARIAN & TAMPILAN ---
-if query:
+# Logika diubah: Hanya jalan jika tombol submit ditekan DAN ada query.
+if submit_button and query:
     found_key = None
     
     # Mencari match di key (ISTJ) atau value aka (The Inventor)
@@ -400,8 +433,8 @@ if query:
     else:
         st.warning(f"Maaf, tidak menemukan data untuk '{query}'. Coba masukkan tipe MBTI (contoh: INFP) atau Julukan (contoh: The Healer).")
 
-else:
+elif not query and not submit_button:
     # Tampilan awal jika belum mencari
-    st.info("👆 Ketik sesuatu di kolom pencarian di atas untuk memulai AI Overview.")
+    st.info("👆 Ketik MBTI/Julukan di atas dan tekan tombol 'Cari' untuk memulai.")
     with st.expander("Lihat Daftar Kata Kunci"):
         st.write(", ".join([f"{k} ({v['aka']})" for k, v in sky_data.items()]))
