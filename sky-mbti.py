@@ -19,9 +19,8 @@ def set_mbti(mbti_key):
 # Saya mengganti URL background dengan sumber yang lebih stabil (WallpaperCave/Official)
 st.markdown("""
     <style>
-    /* --- Background Image --- */
+    /* --- 1. Background Image Utama --- */
     [data-testid="stAppViewContainer"] {
-        /* Gambar Background: Isle of Dawn / Sky Aesthetic */
         background-image: url("http://tmpfiles.org/dl/19144039/skybg.png");
         background-size: cover;
         background-position: center center;
@@ -29,21 +28,23 @@ st.markdown("""
         background-attachment: fixed;
     }
 
+    /* Hilangkan background header bawaan supaya bersih */
     [data-testid="stHeader"] {
         background-color: rgba(0,0,0,0);
     }
 
-    /* --- Container Utama (Semi-Transparan) --- */
-    .main .block-container {
-        background-color: rgba(255, 255, 255, 0.92); /* Putih 92% agar teks jelas */
-        padding: 30px;
-        border-radius: 20px;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-        backdrop-filter: blur(4px);
-        margin-top: 20px;
+    /* --- 2. KOTAK KONTEN (TRANSPARAN) --- */
+    /* Ini adalah bagian yang kamu minta */
+    div.block-container {
+        background-color: rgba(255, 255, 255, 0.85); /* Putih dengan transparansi 85% */
+        border-radius: 20px; /* Sudut membulat */
+        padding: 3rem; /* Jarak antara tulisan dan pinggir kotak */
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Bayangan halus */
+        backdrop-filter: blur(5px); /* Efek blur (frosted glass) pada background di belakang kotak */
+        max-width: 800px; /* Opsional: Membatasi lebar agar tidak terlalu lebar di layar besar */
     }
 
-    /* --- Style AI Overview Box --- */
+    /* --- Style AI Overview Box (Tetap dipertahankan) --- */
     .ai-overview-box {
         background-color: #f8f9fa;
         border-radius: 15px;
@@ -79,13 +80,8 @@ st.markdown("""
         background-color: #eef2ff;
         transform: translateY(-2px);
     }
-    div.stButton > button:focus {
-        background-color: #6366f1;
-        color: white;
-    }
     </style>
 """, unsafe_allow_html=True)
-
 # --- 4. DATABASE DATA (LENGKAP) ---
 sky_data = {
     "ISTJ": {
@@ -282,3 +278,4 @@ if final_query:
 else:
     # Pesan default jika belum ada yang dipilih
     st.info("👈 Silakan pilih salah satu tombol MBTI di atas untuk melihat analisisnya.")
+
