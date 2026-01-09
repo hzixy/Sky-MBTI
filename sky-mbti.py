@@ -200,7 +200,7 @@ sky_data = {
 
 # --- 5. HEADER & JUDUL ---
 st.title("🌌 Sky: Children of the Light")
-st.subheader("MBTI Personality Codex")
+st.subheader("MBTI Personality Codex by HARO")
 st.markdown("**Analisis karakter & gaya bermain berdasarkan tipe kepribadian MBTI di dunia Sky.**")
 
 # --- 6. KOLOM PENCARIAN & TOMBOL GRID ---
@@ -278,4 +278,5 @@ if final_query:
 else:
     # Pesan default jika belum ada yang dipilih
     st.info("👈 Silakan pilih salah satu tombol MBTI di atas untuk melihat analisisnya.")
+
 
