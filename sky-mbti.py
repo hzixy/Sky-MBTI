@@ -1,20 +1,28 @@
 import streamlit as st
 
-# --- KONFIGURASI HALAMAN ---
+# --- 1. KONFIGURASI HALAMAN (Wajib Paling Atas) ---
 st.set_page_config(
     page_title="SkyPersonality Codex",
     page_icon="🕯️",
     layout="centered"
 )
 
-# --- CUSTOM CSS BARU (BACKGROUND + AI STYLE) ---
-# Saya menambahkan URL gambar Sky yang realistis dan mengatur agar area konten utama
-# memiliki latar belakang putih transparan agar teks mudah dibaca.
+# --- 2. SETUP SESSION STATE ---
+# Ini berguna agar aplikasi 'ingat' tombol mana yang ditekan
+if 'selected_mbti' not in st.session_state:
+    st.session_state.selected_mbti = None
+
+def set_mbti(mbti_key):
+    st.session_state.selected_mbti = mbti_key
+
+# --- 3. CUSTOM CSS (BACKGROUND & STYLE) ---
+# Saya mengganti URL background dengan sumber yang lebih stabil (WallpaperCave/Official)
 st.markdown("""
     <style>
-    /* --- Pengaturan Background Image --- */
+    /* --- Background Image --- */
     [data-testid="stAppViewContainer"] {
-        background-image: url("https://static.wikia.nocookie.net/sky-children-of-the-light/images/e/e4/Isle_of_Dawn_Walkthrough_-_02.jpg/revision/latest/scale-to-width-down/1920?cb=20190724133146");
+        /* Gambar Background: Isle of Dawn / Sky Aesthetic */
+        background-image: url("https://images5.alphacoders.com/133/1337449.png");
         background-size: cover;
         background-position: center center;
         background-repeat: no-repeat;
@@ -22,419 +30,255 @@ st.markdown("""
     }
 
     [data-testid="stHeader"] {
-        background-color: rgba(0,0,0,0); /* Membuat header transparan */
+        background-color: rgba(0,0,0,0);
     }
 
-    /* Membuat kotak konten utama menjadi semi-transparan agar tulisan terbaca */
+    /* --- Container Utama (Semi-Transparan) --- */
     .main .block-container {
-        background-color: rgba(255, 255, 255, 0.9); /* Latar putih 90% opacity */
-        padding: 2rem;
-        border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        margin-top: 2rem;
+        background-color: rgba(255, 255, 255, 0.92); /* Putih 92% agar teks jelas */
+        padding: 30px;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        backdrop-filter: blur(4px);
+        margin-top: 20px;
     }
 
-    /* --- Style AI Overview Box (Lama) --- */
+    /* --- Style AI Overview Box --- */
     .ai-overview-box {
-        background-color: #f0f2f6;
-        border-radius: 10px;
-        padding: 20px;
-        border-left: 5px solid #6366f1;
-        margin-bottom: 20px;
+        background-color: #f8f9fa;
+        border-radius: 15px;
+        padding: 25px;
+        border-left: 6px solid #6366f1;
+        margin-bottom: 25px;
         color: #31333F;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
+    
     .section-header {
-        color: #1f2937;
-        font-weight: 700;
-        margin-top: 15px;
-        margin-bottom: 5px;
-        font-size: 1.1em;
+        color: #4338ca;
+        font-weight: 800;
+        margin-top: 20px;
+        margin-bottom: 10px;
+        font-size: 1.2em;
+        border-bottom: 2px solid #e0e7ff;
+        padding-bottom: 5px;
     }
-    /* Style untuk tombol cari agar seragam */
-    [data-testid="stFormSubmitButton"] button {
+
+    /* --- Style Tombol Grid --- */
+    div.stButton > button {
         width: 100%;
-        border-radius: 20px;
+        border-radius: 12px;
+        border: 1px solid #e0e7ff;
+        background-color: white;
+        color: #4b5563;
+        transition: all 0.3s ease;
+    }
+    div.stButton > button:hover {
+        border-color: #6366f1;
+        color: #6366f1;
+        background-color: #eef2ff;
+        transform: translateY(-2px);
+    }
+    div.stButton > button:focus {
         background-color: #6366f1;
         color: white;
-        border: none;
-    }
-    [data-testid="stFormSubmitButton"] button:hover {
-        background-color: #4f46e5;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# --- DATABASE MBTI SKY (Sama seperti sebelumnya) ---
+# --- 4. DATABASE DATA (LENGKAP) ---
 sky_data = {
     "ISTJ": {
         "aka": "The Inventor",
-        "summary": "Pemain **ISTJ (The Inventor)** mewujudkan pola pikir **'Technical Analyst'**. Mereka berfokus pada pemahaman mendalam tentang mekanik game, eksperimen dengan *bug/glitch* secara sistematis, dan efisiensi. Pikiran mereka sibuk menghitung detik atau sudut terbang terbaik.",
-        "playstyle": [
-            "**Mechanic Mastery:** Membongkar cara kerja game, menghitung *wax* per area, menguasai *rocket jump*.",
-            "**Routine & Reliability:** Rute *farming* spesifik. Selalu tepat waktu jika janjian.",
-            "**Fact-Based Helper:** Membantu dengan solusi teknis (glitch pintu, lokasi WL) daripada basa-basi.",
-            "**Inventory Management:** Teliti menabung *Candles* dan *Hearts* untuk Traveling Spirit."
-        ],
-        "archetypes": [
-            "**The Glitch Hunter:** Mencari celah OOB untuk melihat struktur game.",
-            "**The Solo Grinder:** CR 20 lilin tanpa bicara sepatah kata pun.",
-            "**The Wiki Walker:** Menghafal harga item dan lokasi Spirit."
-        ],
-        "location": [
-            "**Glitch Spots:** Menabrak dinding di **Vault** atau **Isle** mencari OOB.",
-            "**The Office:** Menganalisis konten di area rahasia TGC."
-        ]
+        "summary": "Pemain **ISTJ (The Inventor)** adalah teknisi Sky. Mereka fokus pada mekanik, efisiensi, dan rutinitas. Bagi mereka, Sky adalah sistem yang harus dioptimalkan.",
+        "playstyle": ["**Mechanic Mastery:** Menguasai *glitch* dan trik terbang.", "**Routine:** Punya jadwal CR yang kaku.", "**Helper:** Membantu lewat solusi teknis."],
+        "archetypes": ["**The Glitch Hunter**", "**The Solo Grinder**", "**The Wiki Walker**"],
+        "location": ["**Vault/Isle:** Mencari celah dinding (OOB).", "**The Office:** Area rahasia."]
     },
     "INTJ": {
         "aka": "The Mastermind",
-        "summary": "Pemain **INTJ (The Mastermind)** adalah **'Strategic Visionary'**. Fokus pada optimalisasi rute, kemandirian mutlak, dan observasi. *Sky* adalah sistem yang harus dipecahkan. Mereka efisien namun sangat mengapresiasi *lore*.",
-        "playstyle": [
-            "**Strategic Exploration:** Peta mental sempurna, rute terpendek tanpa buang energi.",
-            "**System Analysis:** *Candle Run* adalah teka-teki efisiensi waktu.",
-            "**Introverted Independence:** Nyaman solo, menolak teman jika memperlambat.",
-            "**Lore Theorist:** Merenungkan sejarah Elders dan teori peradaban Sky."
-        ],
-        "archetypes": [
-            "**The Efficiency Expert:** Full CR 3 realm < 45 menit.",
-            "**The Silent Uber:** Memimpin di *Trial of Fire* dengan cepat tanpa bicara.",
-            "**The Observer:** Mengamati pemain lain dari tempat tinggi."
-        ],
-        "location": [
-            "**Efficient Routes:** Jalur balap **Valley of Triumph**.",
-            "**Scheduled Events:** Tiba tepat waktu di **Geyser** (:05) atau **Grandma** (:35)."
-        ]
+        "summary": "Pemain **INTJ (The Mastermind)** adalah ahli strategi. Efisiensi adalah segalanya. Mereka jarang bicara, tapi sangat paham *lore* dan rute tercepat.",
+        "playstyle": ["**Strategic:** Rute CR paling optimal.", "**Independent:** Lebih suka main solo.", "**Analyst:** Menganalisis *lore* game."],
+        "archetypes": ["**The Efficiency Expert**", "**The Silent Uber**", "**The Observer**"],
+        "location": ["**Valley Race:** Jalur balap.", "**Geyser/Grandma:** Tepat waktu event."]
     },
     "ENTJ": {
         "aka": "The Marshall",
-        "summary": "Pemain **ENTJ (The Marshall)** adalah **'Leader of the Pack'**. Fokus pada pengorganisasian grup, keberanian menghadapi Krill, dan struktur tegas. Mereka memastikan *moth* mendapat panduan jelas.",
-        "playstyle": [
-            "**Commanding Leadership:** Uber alami, menggunakan emote *Point* untuk instruksi.",
-            "**Objective Driven:** Main dengan tujuan (Elder Hair, konstelasi penuh).",
-            "**Fearless Approach:** Tidak takut Krill, melihatnya sebagai tantangan.",
-            "**Community Builder:** Sering jadi admin grup atau inisiator event."
-        ],
-        "archetypes": [
-            "**The Veteran Captain:** Menarik 3-7 pemain menembus badai.",
-            "**The Krill Bait:** Mengalihkan Krill agar teman aman.",
-            "**The Strict Mentor:** Mengajar *moth* dengan tegas."
-        ],
-        "location": [
-            "**Golden Wasteland:** Memimpin di **Graveyard** atau **Battlefield**.",
-            "**Eden Entrance:** Melakukan *Deep Call* mengumpulkan pasukan."
-        ]
+        "summary": "Pemain **ENTJ (The Marshall)** adalah pemimpin alami. Mereka tegas memimpin grup melewati bahaya seperti Krill dan mengorganisir komunitas.",
+        "playstyle": ["**Leader:** Uber yang tegas pakai emote Point.", "**Fearless:** Tidak takut Krill.", "**Goal Oriented:** Mengejar item mahal."],
+        "archetypes": ["**The Veteran Captain**", "**The Krill Bait**", "**The Strict Mentor**"],
+        "location": ["**Golden Wasteland:** Graveyard/Battlefield.", "**Eden:** Gerbang depan."]
     },
     "INTP": {
         "aka": "The Architect",
-        "summary": "Pemain **INTP (The Architect)** adalah **'Curious Explorer'**. Didorong rasa ingin tahu intelektual. Lebih tertarik pada *kenapa* dunia Sky seperti ini daripada sekadar cari lilin. Gudang rahasia game.",
-        "playstyle": [
-            "**Unconventional Methods:** Mencoba hal aneh/eksperimen fisika game.",
-            "**Deep Lore Focus:** Membaca mural, memahami narasi tersirat.",
-            "**Detached Observation:** Suka OOB sunyi daripada tempat sosial.",
-            "**Sporadic Activity:** Pola main tidak teratur (burst energy)."
-        ],
-        "archetypes": [
-            "**The OOB Explorer:** Lebih sering di luar peta (*Rainbow Bridge*) daripada di dalam.",
-            "**The Wikipedia:** Tahu segala detail sejarah Season.",
-            "**The Chill Soloist:** Duduk diam di gua sepi."
-        ],
-        "location": [
-            "**Lore Locations:** **Library (Vault)** membaca arsip.",
-            "**Cave of Prophecy:** Mengamati mural elemen di **Isle**."
-        ]
+        "summary": "Pemain **INTP (The Architect)** adalah penjelajah yang penasaran. Lebih tertarik pada rahasia dunia dan teori *lore* daripada mengumpulkan lilin.",
+        "playstyle": ["**Curious:** Eksperimen fisika game.", "**Lore Focus:** Membaca mural/sejarah.", "**OOB:** Suka tempat sepi."],
+        "archetypes": ["**The OOB Explorer**", "**The Wikipedia**", "**The Chill Soloist**"],
+        "location": ["**Vault Library:** Lantai 1 & 2.", "**Cave of Prophecy:** Mural elemen."]
     },
     "INFP": {
         "aka": "The Healer",
-        "summary": "Pemain **INFP (The Healer)** adalah **'Soul of Sky'**. Fokus pada estetika, koneksi emosional, dan ekspresi. Sky adalah pelarian puitis. Sangat peduli mood teman.",
-        "playstyle": [
-            "**Aesthetic Appreciation:** Berhenti demi pemandangan/cahaya bagus.",
-            "**Emotional Support:** Siap dengan emote *Hug*, *Bow*, *Cry*.",
-            "**Imaginative Roleplay:** Ganti outfit sesuai tema area.",
-            "**Non-Competitive:** Terbang lambat menikmati musik."
-        ],
-        "archetypes": [
-            "**The Photographer:** Galeri penuh screenshot pemandangan.",
-            "**The Musician:** Main musik di tempat sepi untuk diri sendiri.",
-            "**The Emotional Moth:** Veteran yang tetap polos sifatnya."
-        ],
-        "location": [
-            "**Atmospheric Spots:** Bangku **Hidden Forest** (hujan) atau **Starlight Desert**.",
-            "**Social Spaces:** Sendirian di **Treehouse**."
-        ]
+        "summary": "Pemain **INFP (The Healer)** adalah jiwa puitis Sky. Fokus pada estetika, emosi, dan keindahan visual. Sangat peduli perasaan teman.",
+        "playstyle": ["**Aesthetic:** Suka pemandangan.", "**Emotional:** Suka emote Hug/Bow.", "**Roleplay:** Outfit sesuai tema."],
+        "archetypes": ["**The Photographer**", "**The Musician**", "**The Emotional Moth**"],
+        "location": ["**Hidden Forest:** Bawah hujan.", "**Starlight Desert:** Lihat bulan."]
     },
     "ENFJ": {
         "aka": "The Teacher",
-        "summary": "Pemain **ENFJ (The Teacher)** adalah **'Guardian Angel'**. Misi utama: keharmonisan sosial dan membantu yang kesulitan. Rela habiskan waktu demi bantu orang asing.",
-        "playstyle": [
-            "**Moth Adopter:** Radar pendeteksi pemain baru yang bingung.",
-            "**Harmony Keeper:** Penengah konflik, pelindung dari troll.",
-            "**Group Coordinator:** 'No one left behind' mentalitas.",
-            "**Verbal/Social:** Aktif di Chat Bench, pendengar baik."
-        ],
-        "archetypes": [
-            "**The Guide:** Selalu bawa *Table* untuk bantu orang.",
-            "**The Party Host:** Mengumpulkan orang menari di lobi.",
-            "**The Protector:** Pasang badan depan Krill demi Moth."
-        ],
-        "location": [
-            "**Moth Spawn Points:** **Isle of Dawn** atau Lobi **Prairie**.",
-            "**8-Player Door:** Menunggu sabar di puzzle 8 orang."
-        ]
+        "summary": "Pemain **ENFJ (The Teacher)** adalah malaikat pelindung. Misi mereka membantu pemain baru (Moth) dan menjaga keharmonisan server.",
+        "playstyle": ["**Moth Adopter:** Suka bantu newbie.", "**Harmony:** Penengah konflik.", "**Social:** Aktif di chat bench."],
+        "archetypes": ["**The Guide**", "**The Party Host**", "**The Protector**"],
+        "location": ["**Isle of Dawn:** Cari moth.", "**8-Player Door:** Menunggu orang."]
     },
     "ENFP": {
         "aka": "The Champion",
-        "summary": "Pemain **ENFP (The Champion)** membawa energi **'Chaotic Good'**. Penuh semangat, spontan, mudah teralihkan. Pusat kegembiraan server yang suka spam honk.",
-        "playstyle": [
-            "**Spontaneous Adventure:** Rute berantakan karena distraksi seru.",
-            "**Social Butterfly:** Berteman dengan siapa saja, honk sapaan.",
-            "**Creative Expression:** Kombinasi kosmetik unik/aneh.",
-            "**Emote Spammer:** Komunikasi lewat emote cepat & spin."
-        ],
-        "archetypes": [
-            "**The Distracted Uber:** Berhenti tiba-tiba karena lihat kupu-kupu.",
-            "**The Honk Master:** *Deep call* terus-menerus cari perhatian.",
-            "**The Friend Collector:** Teman dari seluruh dunia."
-        ],
-        "location": [
-            "**Social Hubs:** Kolam Lobi **Prairie** atau **Sanctuary**.",
-            "**Event Areas:** Tengah keramaian event Days of Color/Bloom."
-        ]
+        "summary": "Pemain **ENFJ (The Champion)** adalah sumber kekacauan yang seru. Penuh energi, spontan, dan suka spam *honk* untuk menyapa semua orang.",
+        "playstyle": ["**Chaotic:** Mudah terdistraksi.", "**Social:** Teman banyak.", "**Creative:** Outfit aneh/unik."],
+        "archetypes": ["**The Distracted Uber**", "**The Honk Master**", "**The Friend Collector**"],
+        "location": ["**Prairie Lobby:** Kolam sosial.", "**Sanctuary:** Main sama manta."]
     },
     "INFJ": {
         "aka": "The Counselor",
-        "summary": "Pemain **INFJ (The Counselor)** adalah **'Silent Guardian'**. Tenang, misterius, protektif pada *inner circle*. Bermain untuk koneksi dalam, bukan kuantitas.",
-        "playstyle": [
-            "**Deep Connection:** Lebih suka ngobrol deep berdua di bench.",
-            "**Intuitive Support:** Tahu kapan teman butuh recharge tanpa diminta.",
-            "**Private:** Jarang muncul di chat publik yang ramai.",
-            "**Purposeful:** Main untuk relaksasi mental."
-        ],
-        "archetypes": [
-            "**The Silent Guardian:** Jarang bicara tapi selalu ada.",
-            "**The Confidant:** Tempat curhat aman di Sky.",
-            "**The Mystic:** Outfit bertema gelap/misterius (Anubis mask)."
-        ],
-        "location": [
-            "**Quiet Heights:** Puncak **Hermit Valley** atau **Wind Paths**.",
-            "**Chat Benches:** Sudut sepi untuk bicara privat."
-        ]
+        "summary": "Pemain **INFJ (The Counselor)** adalah penjaga yang tenang. Bermain untuk koneksi mendalam dengan sedikit teman dekat, bukan keramaian.",
+        "playstyle": ["**Deep Talk:** Suka ngobrol privat.", "**Intuitive:** Peka kebutuhan teman.", "**Private:** Menghindari kerumunan."],
+        "archetypes": ["**The Silent Guardian**", "**The Confidant**", "**The Mystic**"],
+        "location": ["**Wind Paths:** Jalur angin.", "**Hermit Valley:** Puncak gunung."]
     },
     "ESFJ": {
         "aka": "The Provider",
-        "summary": "Pemain **ESFJ (The Provider)** adalah **'The Heart Trader'**. Memastikan logistik grup aman. Sangat taat etika Sky (selalu bow, light, kirim heart).",
-        "playstyle": [
-            "**Logistics:** Memastikan semua dapat lilin & heart.",
-            "**Sky Etiquette:** Sangat sopan, bow berkali-kali.",
-            "**Community Glue:** Mengingat ulang tahun teman Sky.",
-            "**Routine Giver:** Rajin kirim light fragment."
-        ],
-        "archetypes": [
-            "**The Heart Trader:** Kirim heart tiap hari tanpa absen.",
-            "**The Mom Friend:** 'Sudah ambil WL di sana belum?'",
-            "**The Banquet Host:** Menyiapkan meja makan di Grandma."
-        ],
-        "location": [
-            "**Grandma's Feast:** Menaruh *Torch*/*Brazier* untuk orang lain.",
-            "**Home:** Berdiri di konstelasi kirim light."
-        ]
+        "summary": "Pemain **ESFJ (The Provider)** memastikan logistik aman. Mereka sangat sopan (etika Sky) dan rajin mengirim heart/light ke teman.",
+        "playstyle": ["**Logistics:** Pastikan semua dapat lilin.", "**Polite:** Rajin bow.", "**Giver:** Kirim heart rutin."],
+        "archetypes": ["**The Heart Trader**", "**The Mom Friend**", "**The Banquet Host**"],
+        "location": ["**Grandma's Table:** Bawa obor.", "**Home:** Konstelasi teman."]
     },
     "ISFJ": {
         "aka": "The Protector",
-        "summary": "Pemain **ISFJ (The Protector)** adalah **'Loyal Support'**. Tipe support sejati. Membawa properti berguna, tidak menonjol tapi krusial bagi tim.",
-        "playstyle": [
-            "**Support Role:** Membawa payung di Forest, Torch di Wasteland.",
-            "**Loyal Follower:** Setia mengikuti Uber kemanapun.",
-            "**Detail Oriented:** Mengingat preferensi teman.",
-            "**Safety First:** Menghindari rute berbahaya."
-        ],
-        "archetypes": [
-            "**The Walking Battery:** Tugas utama: recharge Uber.",
-            "**The Umbrella Holder:** Melindungi teman dari hujan.",
-            "**The Silent Partner:** Teman CR paling nyaman."
-        ],
-        "location": [
-            "**Trailing Leaders:** Mode follow di belakang teman.",
-            "**Dark Water Areas:** **Wasteland**, menerangi jalan."
-        ]
+        "summary": "Pemain **ISFJ (The Protector)** adalah support setia. Selalu membawa item berguna (payung/obor) dan menjaga Uber agar tidak kehabisan energi.",
+        "playstyle": ["**Support:** Bawa alat bantu.", "**Loyal:** Setia follow teman.", "**Safety:** Pilih rute aman."],
+        "archetypes": ["**The Walking Battery**", "**The Umbrella Holder**", "**The Silent Partner**"],
+        "location": ["**Trailing:** Di belakang teman.", "**Wasteland:** Menerangi jalan."]
     },
     "ESTJ": {
         "aka": "The Supervisor",
-        "summary": "Pemain **ESTJ (The Supervisor)** adalah **'Task Master'**. CR adalah pekerjaan. Efisien, tegas, tidak suka basa-basi atau AFK tanpa izin.",
-        "playstyle": [
-            "**Efficiency:** 'Ayo cepat, geyser 2 menit lagi'.",
-            "**Structure:** Patuh jadwal event (Geyser-Grandma-Turtle).",
-            "**Direct:** Menegur jika ada yang main-main saat CR.",
-            "**Goal Oriented:** Mengejar 20 lilin/hari wajib."
-        ],
-        "archetypes": [
-            "**The Schedule Master:** Hafal mati jadwal event.",
-            "**The No-Nonsense Uber:** 'Duduk atau ditinggal'.",
-            "**The Grinder:** Fokus murni pada currency."
-        ],
-        "location": [
-            "**Clock-Watching:** Lari antar portal di **Home**.",
-            "**Trials:** Menyelesaikan **Trial Earth/Air** dengan kaku."
-        ]
+        "summary": "Pemain **ESTJ (The Supervisor)** menganggap CR sebagai pekerjaan. Efisien, disiplin waktu, dan tidak suka basa-basi yang membuang waktu.",
+        "playstyle": ["**Efficient:** Cepat dan tepat.", "**Structured:** Ikut jadwal event.", "**Direct:** Tidak suka AFK tanpa izin."],
+        "archetypes": ["**The Schedule Master**", "**The No-Nonsense Uber**", "**The Grinder**"],
+        "location": ["**Home:** Lari antar portal.", "**Trials:** Mode speedrun."]
     },
     "ISTP": {
         "aka": "The Operator",
-        "summary": "Pemain **ISTP (The Operator)** adalah **'Skill Master'**. Praktis, berani, suka tantangan fisik. Terbang solo di Eden tanpa terluka adalah hobi.",
-        "playstyle": [
-            "**Technical Skill:** Terbang manual sempurna.",
-            "**Solo Challenges:** Eden solo, Trials shortcut.",
-            "**Adaptive:** Bisa selamat di situasi apapun.",
-            "**Action Oriented:** Lebih suka bergerak daripada chat."
-        ],
-        "archetypes": [
-            "**The Solo Ace:** Terbang sendiri lebih cepat daripada di-uber.",
-            "**The Trial Speedrunner:** Shortcut trial api/air.",
-            "**The Parkour Master:** Lompat di aset map sulit."
-        ],
-        "location": [
-            "**Skill Challenges:** Shortcut **Trial of Fire**.",
-            "**Flying Race:** Akrobatik di **Citadel (Valley)**."
-        ]
+        "summary": "Pemain **ISTP (The Operator)** suka tantangan fisik. Hobi mereka adalah terbang solo di Eden tanpa terluka atau melakukan *shortcut* sulit.",
+        "playstyle": ["**Skill:** Terbang manual jago.", "**Solo:** Eden sendirian.", "**Action:** Sedikit bicara, banyak aksi."],
+        "archetypes": ["**The Solo Ace**", "**The Trial Speedrunner**", "**The Parkour Master**"],
+        "location": ["**Trial of Fire:** Shortcut.", "**Citadel:** Akrobatik udara."]
     },
     "ESFP": {
         "aka": "The Performer",
-        "summary": "Pemain **ESFP (The Performer)** menjadikan langit sebagai **'Panggung'**. Koleksi instrumen & kosmetik mencolok. Suka jadi pusat perhatian.",
-        "playstyle": [
-            "**Showmanship:** Main musik lagu populer di tempat ramai.",
-            "**Fashion:** Pakai Ultimate Gift terbaru/termahal.",
-            "**Entertainer:** Emote lucu, kembang api.",
-            "**Social Energy:** Suka keramaian lobi."
-        ],
-        "archetypes": [
-            "**The Musician:** Konser tunggal di Harmony Hall.",
-            "**The Fashionista:** Outfit paling bersinar.",
-            "**The Drama:** Reaksi emote yang heboh."
-        ],
-        "location": [
-            "**Harmony Hall:** Panggung utama toko musik.",
-            "**Crowded Lobbies:** Pakai celana Rhythm/Sayap Aurora."
-        ]
+        "summary": "Pemain **ESFP (The Performer)** menjadikan Sky panggung mereka. Suka pusat perhatian, main musik di lobi, dan pakai kosmetik mahal.",
+        "playstyle": ["**Showman:** Main lagu hits.", "**Fashion:** Outfit mencolok.", "**Social:** Suka lobi ramai."],
+        "archetypes": ["**The Musician**", "**The Fashionista**", "**The Drama**"],
+        "location": ["**Harmony Hall:** Toko musik.", "**Village Theater:** Panggung."]
     },
     "ISFP": {
         "aka": "The Composer",
-        "summary": "Pemain **ISFP (The Composer)** adalah **'Artistic Wanderer'**. Bermain mengandalkan *mood*, visual, dan audio. Mengekspresikan diri lewat outfit unik.",
-        "playstyle": [
-            "**Visual Flair:** Mix-and-match outfit estetik.",
-            "**Sensory:** Menikmati suara langkah/seluncur es.",
-            "**Solo Artist:** Main musik bukan untuk pamer, tapi rasa.",
-            "**Fluid:** Bergerak mengikuti arus/mood."
-        ],
-        "archetypes": [
-            "**The Photographer:** Screenshot artistik OOB.",
-            "**The Silent Musician:** Lagu sedih di hujan.",
-            "**The Vibes Player:** Login cuma buat jalan-jalan."
-        ],
-        "location": [
-            "**Scenic OOB:** **Rainbow Bridge** atau atas awan.",
-            "**Village of Dreams:** Seluncur santai."
-        ]
+        "summary": "Pemain **ISFP (The Composer)** adalah pengelana artistik. Main sesuai *mood*, menikmati visual, dan mengekspresikan diri lewat fashion unik.",
+        "playstyle": ["**Visual:** Outfit estetik.", "**Sensory:** Nikmati suara/visual.", "**Fluid:** Ikuti arus."],
+        "archetypes": ["**The Photographer**", "**The Silent Musician**", "**The Vibes Player**"],
+        "location": ["**Rainbow Bridge:** OOB.", "**Village of Dreams:** Skating."]
     },
     "ESTP": {
         "aka": "The Promoter",
-        "summary": "Pemain **ESTP (The Promoter)** mencari **'Adrenaline'**. Suka aksi, *trolling* ringan, balapan, dan tantangan berbahaya.",
-        "playstyle": [
-            "**Thrill Seeker:** Sengaja cari bahaya.",
-            "**Playful Troll:** Kembang api di muka teman, unfriend prank.",
-            "**Competitve:** Ajak balapan di Valley.",
-            "**Fast Paced:** Gak betah diam lama."
-        ],
-        "archetypes": [
-            "**The Krill Dodger:** Prank naga Wasteland.",
-            "**The Racer:** Selalu ingin duluan sampai.",
-            "**The Prankster:** Lucu tapi kadang nyebelin."
-        ],
-        "location": [
-            "**Danger Zones:** Main petak umpet sama Krill **Wasteland**.",
-            "**Racing:** Lereng salju **Valley**."
-        ]
+        "summary": "Pemain **ESTP (The Promoter)** mencari adrenalin. Suka aksi berbahaya, *prank* ringan ke teman, dan balapan liar di Valley.",
+        "playstyle": ["**Thrill:** Cari bahaya.", "**Playful:** Suka bercanda.", "**Competitive:** Balapan."],
+        "archetypes": ["**The Krill Dodger**", "**The Racer**", "**The Prankster**"],
+        "location": ["**Wasteland:** Main sama Krill.", "**Valley:** Balapan ski."]
     },
     "ENTP": {
-        "aka": "The Debater", # Menambahkan ENTP agar lengkap 16
-        "summary": "Pemain **ENTP (The Debater)** adalah **'Chaos Theorist'**. Inovatif, suka mengetes batas game, dan debat tentang lore atau mekanik di chat.",
-        "playstyle": [
-            "**Boundary Pushing:** 'Bisa gak ya kita ke sana tanpa sayap?'.",
-            "**Intellectual Chat:** Debat teori di bench berjam-jam.",
-            "**Unpredictable:** Kadang Uber, kadang kabur.",
-            "**Experimenter:** Mencoba glitch baru."
-        ],
-        "archetypes": [
-            "**The Hacker:** (Bukan cheat) Tapi tahu segala trik aneh.",
-            "**The Troll:** Menjatuhkan teman ke air (bercanda).",
-            "**The Innovator:** Menemukan cara farming baru."
-        ],
-        "location": [
-            "**Glitch Areas:** Mencoba menembus tembok yang mustahil.",
-            "**Wasteland Social:** Ngobrol debat di lobi."
-        ]
+        "aka": "The Debater",
+        "summary": "Pemain **ENTP (The Debater)** suka menguji batas game. Mencari glitch baru, debat teori di chat, dan kadang iseng (chaotic).",
+        "playstyle": ["**Limit Test:** Coba hal mustahil.", "**Intellectual:** Debat teori.", "**Chaotic:** Tidak bisa ditebak."],
+        "archetypes": ["**The Hacker**", "**The Troll**", "**The Innovator**"],
+        "location": ["**Glitch Area:** Tembus tembok.", "**Lobby:** Debat chat."]
     }
 }
 
-# --- HEADER APLIKASI ---
+# --- 5. HEADER & JUDUL ---
 st.title("🌌 Sky: Children of the Light")
 st.subheader("MBTI Personality Codex")
-st.write("Masukkan tipe MBTI atau julukan (contoh: *INTJ*, *The Healer*) untuk melihat analisis karakter mereka di dunia Sky.")
+st.markdown("**Analisis karakter & gaya bermain berdasarkan tipe kepribadian MBTI di dunia Sky.**")
 
-# --- SEARCH BAR & BUTTON (FORM) ---
-# Kita menggunakan st.form agar pencarian hanya terjadi saat tombol ditekan.
+# --- 6. KOLOM PENCARIAN & TOMBOL GRID ---
+
+# A. Pencarian Manual
 with st.form(key='search_form'):
     col_input, col_btn = st.columns([4, 1])
     with col_input:
-        query = st.text_input("", placeholder="🔍 Search MBTI (e.g., ISTJ, The Protector)...", label_visibility="collapsed").strip()
+        manual_query = st.text_input("", placeholder="🔍 Ketik manual (contoh: INTJ, The Healer)...", label_visibility="collapsed")
     with col_btn:
-        submit_button = st.form_submit_button(label='Cari 🔎')
+        submit_search = st.form_submit_button(label='Cari 🔎')
 
-# --- LOGIKA PENCARIAN & TAMPILAN ---
-# Logika diubah: Hanya jalan jika tombol submit ditekan DAN ada query.
-if submit_button and query:
+if submit_search and manual_query:
+    st.session_state.selected_mbti = manual_query
+
+# B. Tombol Cepat (Grid 4 Kolom)
+st.write("---")
+st.caption("👇 **Atau pilih tipe MBTI secara langsung:**")
+
+# Membuat Grid Tombol (4 baris x 4 kolom)
+mbti_keys = list(sky_data.keys())
+cols = st.columns(4) # Membagi layar jadi 4 kolom
+for i, key in enumerate(mbti_keys):
+    with cols[i % 4]: # Logika untuk menempatkan tombol di kolom yang benar
+        # Tampilkan tombol dengan Nama Tipe + Julukan Singkat
+        aka_short = sky_data[key]['aka'].split(" ")[1] # Ambil kata kedua (The [Inventor])
+        if st.button(f"**{key}**\n{aka_short}", use_container_width=True):
+            set_mbti(key) # Update session state saat diklik
+
+# --- 7. LOGIKA TAMPILAN HASIL ---
+# Cek apakah ada MBTI yang dipilih di session state
+final_query = st.session_state.selected_mbti
+
+if final_query:
     found_key = None
     
-    # Mencari match di key (ISTJ) atau value aka (The Inventor)
+    # Mencari match di key atau value
     for key, data in sky_data.items():
-        if query.upper() == key or query.lower() in data['aka'].lower():
+        if final_query.upper() == key or final_query.lower() in data['aka'].lower():
             found_key = key
             break
     
     if found_key:
         d = sky_data[found_key]
         
-        # TAMPILAN CARD AI OVERVIEW
+        # --- TAMPILAN UTAMA (AI OVERVIEW STYLE) ---
+        st.markdown("###") # Spacer
         st.markdown(f"""
         <div class="ai-overview-box">
-            <h3>✨ {found_key} - {d['aka']}</h3>
-            <p>{d['summary']}</p>
+            <h3 style="margin-top:0;">✨ {found_key} - {d['aka']}</h3>
+            <p style="font-size:1.05em; line-height:1.6;">{d['summary']}</p>
         </div>
         """, unsafe_allow_html=True)
         
-        # DETAIL SECTIONS
-        c1, c2 = st.columns([1.5, 1])
+        # --- DETAIL 2 KOLOM ---
+        c1, c2 = st.columns(2)
         
         with c1:
-            st.markdown(f"<div class='section-header'>How {found_key} Plays Sky</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='section-header'>🎮 Playstyle</div>", unsafe_allow_html=True)
             for item in d['playstyle']:
+                st.markdown(f"- {item}")
+            
+            st.markdown(f"<div class='section-header'>🎭 Archetypes</div>", unsafe_allow_html=True)
+            for item in d['archetypes']:
                 st.markdown(f"- {item}")
                 
         with c2:
-            st.markdown(f"<div class='section-header'>Common Archetypes</div>", unsafe_allow_html=True)
-            for item in d['archetypes']:
-                st.markdown(f"- {item}")
-
-        st.markdown("---")
-        st.markdown(f"<div class='section-header'>📍 Where to Find Them</div>", unsafe_allow_html=True)
-        col_loc1, col_loc2 = st.columns(2)
-        for i, loc in enumerate(d['location']):
-            if i % 2 == 0:
-                with col_loc1: st.info(loc)
-            else:
-                with col_loc2: st.info(loc)
+            st.markdown(f"<div class='section-header'>📍 Where to Find Them</div>", unsafe_allow_html=True)
+            for item in d['location']:
+                st.info(item.replace("**", "LOCATION: ", 1).replace("LOCATION: ", "")) # Sedikit trik formatting
 
     else:
-        st.warning(f"Maaf, tidak menemukan data untuk '{query}'. Coba masukkan tipe MBTI (contoh: INFP) atau Julukan (contoh: The Healer).")
+        st.warning(f"⚠️ Maaf, data untuk '{final_query}' tidak ditemukan.")
 
-elif not query and not submit_button:
-    # Tampilan awal jika belum mencari
-    st.info("👆 Ketik MBTI/Julukan di atas dan tekan tombol 'Cari' untuk memulai.")
-    with st.expander("Lihat Daftar Kata Kunci"):
-        st.write(", ".join([f"{k} ({v['aka']})" for k, v in sky_data.items()]))
+else:
+    # Pesan default jika belum ada yang dipilih
+    st.info("👈 Silakan pilih salah satu tombol MBTI di atas untuk melihat analisisnya.")
