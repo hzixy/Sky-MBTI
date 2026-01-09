@@ -19,7 +19,7 @@ def set_mbti(mbti_key):
 # Saya mengganti URL background dengan sumber yang lebih stabil (WallpaperCave/Official)
 st.markdown("""
     <style>
-    /* --- 1. Background Image Utama --- */
+    /* --- 1. Background Image (Global) --- */
     [data-testid="stAppViewContainer"] {
         background-image: url("http://tmpfiles.org/dl/19144039/skybg.png");
         background-size: cover;
@@ -28,27 +28,65 @@ st.markdown("""
         background-attachment: fixed;
     }
 
-    /* Hilangkan background header bawaan supaya bersih */
     [data-testid="stHeader"] {
         background-color: rgba(0,0,0,0);
     }
 
-    /* --- 2. KOTAK KONTEN (TRANSPARAN) --- */
-    /* Ini adalah bagian yang kamu minta */
+    /* --- 2. KONFIGURASI CONTAINER (BOX PUTIH) --- */
+    /* Ini settingan Default (untuk Laptop/PC) */
     div.block-container {
-        background-color: rgba(255, 255, 255, 0.85); /* Putih dengan transparansi 85% */
-        border-radius: 20px; /* Sudut membulat */
-        padding: 3rem; /* Jarak antara tulisan dan pinggir kotak */
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Bayangan halus */
-        backdrop-filter: blur(5px); /* Efek blur (frosted glass) pada background di belakang kotak */
-        max-width: 800px; /* Opsional: Membatasi lebar agar tidak terlalu lebar di layar besar */
+        background-color: rgba(255, 255, 255, 0.85);
+        border-radius: 20px;
+        padding: 3rem 3rem; /* Atas-Bawah 3rem, Kiri-Kanan 3rem */
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(5px);
+        max-width: 900px; 
+        margin-top: 2rem;
     }
 
-    /* --- Style AI Overview Box (Tetap dipertahankan) --- */
+    /* --- 3. KHUSUS LAYAR HP (RESPONSIVE) --- */
+    /* Kode di bawah ini hanya jalan kalau layar < 768px (HP/Tablet kecil) */
+    @media only screen and (max-width: 768px) {
+        div.block-container {
+            padding: 1.5rem 1rem; /* Padding dikecilkan biar muat banyak */
+            margin-top: 0rem;     /* Hilangkan jarak atas berlebih */
+            border-radius: 15px;  /* Radius sudut diperhalus */
+            max-width: 100%;      /* Full width di HP */
+        }
+        
+        /* Judul diperkecil sedikit di HP */
+        h1 {
+            font-size: 1.8rem !important;
+        }
+        h3 {
+            font-size: 1.3rem !important;
+        }
+    }
+
+    /* --- 4. Style Tombol Grid --- */
+    div.stButton > button {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid #e0e7ff;
+        background-color: white;
+        color: #4b5563;
+        transition: all 0.3s ease;
+        min-height: 50px; /* Tinggi minimum biar enak dipencet jempol */
+        font-weight: 500;
+    }
+    
+    div.stButton > button:hover {
+        border-color: #6366f1;
+        color: #6366f1;
+        background-color: #eef2ff;
+        transform: translateY(-2px);
+    }
+
+    /* --- 5. Style Elemen Lain --- */
     .ai-overview-box {
         background-color: #f8f9fa;
         border-radius: 15px;
-        padding: 25px;
+        padding: 20px;
         border-left: 6px solid #6366f1;
         margin-bottom: 25px;
         color: #31333F;
@@ -63,22 +101,6 @@ st.markdown("""
         font-size: 1.2em;
         border-bottom: 2px solid #e0e7ff;
         padding-bottom: 5px;
-    }
-
-    /* --- Style Tombol Grid --- */
-    div.stButton > button {
-        width: 100%;
-        border-radius: 12px;
-        border: 1px solid #e0e7ff;
-        background-color: white;
-        color: #4b5563;
-        transition: all 0.3s ease;
-    }
-    div.stButton > button:hover {
-        border-color: #6366f1;
-        color: #6366f1;
-        background-color: #eef2ff;
-        transform: translateY(-2px);
     }
     </style>
 """, unsafe_allow_html=True)
@@ -278,5 +300,6 @@ if final_query:
 else:
     # Pesan default jika belum ada yang dipilih
     st.info("👈 Silakan pilih salah satu tombol MBTI di atas untuk melihat analisisnya.")
+
 
 
