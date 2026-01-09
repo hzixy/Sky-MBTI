@@ -22,7 +22,7 @@ st.markdown("""
     /* --- Background Image --- */
     [data-testid="stAppViewContainer"] {
         /* Gambar Background: Isle of Dawn / Sky Aesthetic */
-        background-image: url("https://images5.alphacoders.com/133/1337449.png");
+        background-image: url("http://tmpfiles.org/dl/19143103/sky.jpg");
         background-size: cover;
         background-position: center center;
         background-repeat: no-repeat;
@@ -282,3 +282,4 @@ if final_query:
 else:
     # Pesan default jika belum ada yang dipilih
     st.info("👈 Silakan pilih salah satu tombol MBTI di atas untuk melihat analisisnya.")
+
